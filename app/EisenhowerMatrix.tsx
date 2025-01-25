@@ -11,7 +11,7 @@ interface Task {
   quadrant?: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://eisenhower-matrix-backend-production-2c44.up.railway.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://eisenhower-matrix-backend-production-2c44.up.railway.app";
 
 const EisenhowerMatrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -19,33 +19,32 @@ const EisenhowerMatrix = () => {
 
   const addTask = async () => {
     if (!taskText) return;
-  
-    const newTask: Task = { id: uuidv4(), text: taskText };
-  
+
+    const newTask: Task = { id: uuidv4(), text: taskText, urgency: 5, importance: 5, quadrant: "" };
+
     try {
-      console.log(`🚀 Sending task to API: ${API_URL}/rank-tasks`, newTask);
-  
-      const response = await fetch(`${API_URL}/rank-tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([newTask]), // Ensure correct format
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ranking: ${response.statusText}`);
-      }
-  
-      const rankedTasks: Task[] = await response.json();
-      console.log("✅ API Response:", rankedTasks);
-  
-      // Ensure tasks are assigned quadrants before updating state
-      setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
+        const response = await fetch(`${API_URL}/rank-tasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify([newTask]),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch ranking");
+
+        const rankedTasks: Task[] = await response.json();
+
+        console.log("Ranked Tasks Response:", rankedTasks);
+
+        // **Ensure quadrants are assigned**
+        if (rankedTasks.length > 0) {
+            setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
+        }
     } catch (error) {
-      console.error("🚨 Error ranking tasks:", error);
+        console.error("Error ranking tasks:", error);
     }
-  
-    setTaskText(""); // Clear input
-  };
+
+    setTaskText("");
+};
 
   // **Function to Remove Completed Task**
   const removeTask = (taskId: string) => {
