@@ -11,7 +11,7 @@ interface Task {
   quadrant?: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://eisenhower-matrix-backend-production-2c44.up.railway.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const EisenhowerMatrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
