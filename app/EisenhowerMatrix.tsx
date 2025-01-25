@@ -3,7 +3,18 @@
 import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-// ** Define Task Interface **
+// Define Quadrant type
+type Quadrant = "Do Now" | "Schedule" | "Delegate" | "Eliminate";
+
+// Define colors for each quadrant
+const colors: Record<Quadrant, string> = {
+  "Do Now": "#4CAF50",  // Green
+  Schedule: "#FFEB3B",  // Yellow
+  Delegate: "#03A9F4",  // Blue
+  Eliminate: "#F44336", // Red
+};
+
+// Define Task Interface
 interface Task {
   id: string;
   text: string;
@@ -12,8 +23,10 @@ interface Task {
   quadrant?: string;
 }
 
-// ** Ensure API URL is correctly set **
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://eisenhower-matrix-backend-production-2c44.up.railway.app";
+// API Base URL (Update with correct backend URL)
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://eisenhower-matrix-backend-production-2c44.up.railway.app";
 
 const EisenhowerMatrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -23,43 +36,41 @@ const EisenhowerMatrix = () => {
     console.log("🚀 Loaded Tasks:", tasks);
   }, [tasks]);
 
-  // ** Add Task Function **
+  // **Add Task Function**
   const addTask = async () => {
-    if (!taskText.trim()) return;
-
+    if (!taskText.trim()) return; // Prevent empty tasks
 
     const newTask: Task = {
-      id: crypto.randomUUID(),
-      text: taskText,
+      id: uuidv4(),
+      text: taskText.trim(),
       urgency: 5,
       importance: 5,
       quadrant: "",
-  };
+    };
 
     try {
-        console.log("📡 Sending Task:", newTask);
-        const response = await fetch(`${API_URL}/rank-tasks`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify([newTask]),
-        });
+      console.log("📡 Sending Task to Backend:", newTask);
 
-        if (!response.ok) throw new Error(`Failed to fetch ranking: ${response.statusText}`);
+      const response = await fetch(`${API_URL}/rank-tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([...tasks, newTask]), // Send all tasks for AI reevaluation
+      });
 
-        const rankedTasks: Task[] = await response.json();
-        console.log("📥 Received Ranked Tasks:", rankedTasks);
+      if (!response.ok) throw new Error(`Failed to fetch ranking: ${response.statusText}`);
 
-        if (rankedTasks.length > 0) {
-            setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
-        }
+      const rankedTasks: Task[] = await response.json();
+      console.log("📥 Received Ranked Tasks:", rankedTasks);
+
+      setTasks(rankedTasks); // Update tasks with new AI-ranked quadrants
     } catch (error) {
-        console.error("❌ Error ranking tasks:", error);
+      console.error("❌ Error ranking tasks:", error);
     }
 
-    setTaskText("");
+    setTaskText(""); // Reset input field
   };
 
-  // ** Remove Completed Task **
+  // **Remove Completed Task**
   const removeTask = (taskId: string) => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
   };
@@ -67,7 +78,7 @@ const EisenhowerMatrix = () => {
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>🚀 Eisenhower Matrix AI</h1>
-      
+
       <div style={styles.inputContainer}>
         <input
           value={taskText}
@@ -79,23 +90,16 @@ const EisenhowerMatrix = () => {
           Add Task
         </button>
       </div>
-
       {/* ** Eisenhower Matrix Grid ** */}
       <div style={styles.matrix}>
-        {[
-          { title: "Do Now", color: "#4CAF50" }, // Green
-          { title: "Schedule", color: "#FFEB3B" }, // Yellow
-          { title: "Delegate", color: "#03A9F4" }, // Blue
-          { title: "Eliminate", color: "#F44336" }, // Red
-        ].map((quadrant, index) => (
-          <div key={index} style={{ ...styles.quadrant, backgroundColor: quadrant.color }}>
-            <h2 style={styles.quadrantTitle}>{quadrant.title}</h2>
-
+        {(["Do Now", "Schedule", "Delegate", "Eliminate"] as Quadrant[]).map((quadrant, index) => (
+          <div key={index} style={{ ...styles.quadrant, backgroundColor: colors[quadrant] }}>
+            <h2 style={styles.quadrantTitle}>{quadrant}</h2>
             <div style={styles.taskContainer}>
               {tasks
                 .filter((task) => {
                   console.log(`🔍 Checking Task: ${task.text}, Quadrant: "${task.quadrant}"`);
-                  return task.quadrant?.toLowerCase() === quadrant.title.toLowerCase();
+                  return task.quadrant?.toLowerCase() === quadrant.toLowerCase();
                 })
                 .map((task) => (
                   <div key={task.id} style={styles.task}>
@@ -114,7 +118,7 @@ const EisenhowerMatrix = () => {
 // ** Styled Components **
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
-    textAlign: "center" as const,
+    textAlign: "center",
     padding: "20px",
     fontFamily: "Arial, sans-serif",
     backgroundColor: "#121212",
