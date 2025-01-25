@@ -13,17 +13,17 @@ load_dotenv()
 # Ensure OpenAI API Key is loaded
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
-    raise ValueError("⚠️ OPENAI_API_KEY is missing. Set it in Railway environment variables or .env file.")
+    raise ValueError("⚠️ OPENAI_API_KEY is missing. Set it in .env or Railway environment variables.")
 
 openai.api_key = openai_api_key
 
 # Initialize FastAPI
 app = FastAPI()
 
-# ✅ FIXED: Update CORS settings
+# ✅ FIXED: Update CORS settings to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 🔴 TEMPORARY: Allow all origins for debugging
+    allow_origins=["*"],  # Allow all origins (change in production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,7 +37,7 @@ class Task(BaseModel):
     importance: int = 5
     quadrant: str = ""
 
-# ✅ Function to manually determine quadrant
+# ✅ Function to manually determine quadrant (Fallback if AI fails)
 def determine_quadrant(urgency: int, importance: int) -> str:
     if urgency >= 5 and importance >= 5:
         return "Do Now"
@@ -76,7 +76,7 @@ def ai_rank_tasks(task_list):
             temperature=0.5,
         )
 
-        # ✅ Validate AI response format
+        # ✅ Ensure AI response is valid JSON
         response_content = response["choices"][0]["message"]["content"]
         ranked_tasks = json.loads(response_content)
 
@@ -101,7 +101,7 @@ def rank_tasks(task_list: list[Task]):
         if ai_result:
             for task in task_list:
                 for ranked_task in ai_result:
-                    if task.text.lower().strip() == ranked_task["text"].lower().strip():  # Ensure proper matching
+                    if task.text.lower().strip() == ranked_task["text"].lower().strip():
                         task.urgency = ranked_task.get("urgency", 5)
                         task.importance = ranked_task.get("importance", 5)
                         task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))

@@ -25,45 +25,38 @@ const EisenhowerMatrix = () => {
 
   // ** Add Task Function **
   const addTask = async () => {
-    if (!taskText) return;
+    if (!taskText.trim()) return;
+
 
     const newTask: Task = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       text: taskText,
       urgency: 5,
       importance: 5,
-      quadrant: "", // Starts empty
-    };
+      quadrant: "",
+  };
 
     try {
-      console.log("📡 Sending Task:", newTask);
+        console.log("📡 Sending Task:", newTask);
+        const response = await fetch(`${API_URL}/rank-tasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify([newTask]),
+        });
 
-      const response = await fetch(`${API_URL}/rank-tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([newTask]),
-      });
+        if (!response.ok) throw new Error(`Failed to fetch ranking: ${response.statusText}`);
 
-      if (!response.ok) throw new Error("Failed to fetch ranking");
+        const rankedTasks: Task[] = await response.json();
+        console.log("📥 Received Ranked Tasks:", rankedTasks);
 
-      const rankedTasks: Task[] = await response.json();
-
-      console.log("📥 Received Ranked Tasks:", rankedTasks);
-
-      // ** Ensure quadrants are assigned before updating state **
-      if (rankedTasks.length > 0) {
-        const validTasks = rankedTasks.map(task => ({
-          ...task,
-          quadrant: task.quadrant || "Uncategorized",
-        }));
-
-        setTasks((prevTasks) => [...prevTasks, ...validTasks]);
-      }
+        if (rankedTasks.length > 0) {
+            setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
+        }
     } catch (error) {
-      console.error("❌ Error ranking tasks:", error);
+        console.error("❌ Error ranking tasks:", error);
     }
 
-    setTaskText(""); // Clear input field
+    setTaskText("");
   };
 
   // ** Remove Completed Task **
