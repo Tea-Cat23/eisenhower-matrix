@@ -3,39 +3,44 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
+interface Task {
+  id: string;
+  text: string;
+  urgency?: number;
+  importance?: number;
+  quadrant?: string;
+}
+
 const EisenhowerMatrix = () => {
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [taskText, setTaskText] = useState("");
 
   const addTask = async () => {
     if (!taskText) return;
 
     const newTask = { id: uuidv4(), text: taskText };
-    const updatedTasks = [...tasks, newTask];
 
     try {
-      const response = await fetch("http://localhost:8000/rank-tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedTasks),
-      });
+        const response = await fetch("http://localhost:8000/rank-tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify([newTask]),  // Send task as an array
+        });
 
-      if (!response.ok) throw new Error("Failed to fetch ranking");
+        if (!response.ok) throw new Error("Failed to fetch ranking");
 
-      const rankedTasks = await response.json();
-      setTasks(rankedTasks);
+        const rankedTasks: Task[] = await response.json();
+        setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
     } catch (error) {
-      console.error("Error ranking tasks:", error);
+        console.error("Error ranking tasks:", error);
     }
 
-    setTaskText("");
-  };
+    setTaskText(""); // Clear input field
+};
 
   // **Function to Remove Completed Task**
   const removeTask = (taskId: string) => {
-    setTasks(prevTasks => 
-      prevTasks.filter(task => task.id !== taskId)
-    );
+    setTasks((prevTasks) => prevTasks.filter((task: Task) => task.id !== taskId));
   };
 
   return (
