@@ -38,41 +38,42 @@ const EisenhowerMatrix = () => {
 
   // **Add Task Function**
   const addTask = async () => {
-    if (!taskText.trim()) return; // Prevent empty tasks
-
-    const newTask: Task = {
+    if (!taskText.trim()) return;
+  
+    const newTask = {
       id: uuidv4(),
       text: taskText.trim(),
       urgency: 5,
       importance: 5,
-      quadrant: undefined, // Let GPT-4o assign the correct quadrant
+      quadrant: "",
     };
-
+  
+    console.log("📡 Sending Task to Backend:", newTask);
+  
     try {
-      console.log("📡 Sending Task to Backend:", newTask);
-
       const response = await fetch(`${API_URL}/rank-tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([...tasks, newTask]), // Send all tasks for AI reevaluation
+        body: JSON.stringify([...tasks, newTask]), // Send all tasks
       });
-
-      if (!response.ok) throw new Error(`Failed to fetch ranking: ${response.statusText}`);
-
-      const rankedTasks: Task[] = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ranking: ${response.statusText}`);
+      }
+  
+      const rankedTasks = await response.json();
       console.log("📥 Received Ranked Tasks:", rankedTasks);
-
-      // Ensure tasks are correctly assigned to quadrants
-      setTasks(
-        rankedTasks.map((task) => ({
-          ...task,
-          quadrant: (task.quadrant as Quadrant) || "Eliminate", // Default to 'Eliminate' if missing
-        }))
-      );
+  
+      // If AI ranking is empty, show error
+      if (!rankedTasks.length) {
+        console.error("❌ AI did not rank tasks. Check OpenAI response.");
+      }
+  
+      setTasks(rankedTasks);
     } catch (error) {
       console.error("❌ Error ranking tasks:", error);
     }
-
+  
     setTaskText(""); // Reset input field
   };
 

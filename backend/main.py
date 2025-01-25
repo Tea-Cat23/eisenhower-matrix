@@ -102,7 +102,6 @@ def rank_tasks(task_list: list[Task]):
     try:
         print("📡 Received Tasks:", [task.dict() for task in task_list])
         
-        # Get AI-ranked tasks
         ai_result = ai_rank_tasks(task_list)
 
         if ai_result:
@@ -113,7 +112,7 @@ def rank_tasks(task_list: list[Task]):
                         task.importance = ranked_task.get("importance", 5)
                         task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))
         else:
-            # If AI fails, assign quadrants manually
+            print("❌ AI Failed, using manual quadrant assignment")
             for task in task_list:
                 task.quadrant = determine_quadrant(task.urgency, task.importance)
 
@@ -121,7 +120,7 @@ def rank_tasks(task_list: list[Task]):
         return task_list
 
     except Exception as e:
-        print("❌ Error processing tasks:", str(e))
+        print("❌ Backend Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 # Run the FastAPI app
