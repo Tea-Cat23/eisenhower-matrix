@@ -14,8 +14,8 @@ app = FastAPI()
 
 origins = [
     "https://eisenhower-matrix-91a6967hj-tea-cats-projects.vercel.app",  # Replace with your exact frontend URL
-    "http://localhost:3000",
     "https://eisenhower-matrix-<your-vercel-deployment>.vercel.app",
+    "*",
 ]
 
 # Enable CORS to allow frontend communication
