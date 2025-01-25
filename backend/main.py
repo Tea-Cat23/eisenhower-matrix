@@ -23,7 +23,7 @@ app = FastAPI()
 origins = [
     "https://eisenhower-matrix-91a6967hj-tea-cats-projects.vercel.app",  # Update this with the actual Vercel URL
     "https://eisenhower-matrix.vercel.app",  # General fallback
-    "*",  # Allow all for testing (not recommended in production)
+    "*"  # Allow all for testing (not recommended in production)
 ]
 
 # Enable CORS for frontend communication
@@ -68,8 +68,7 @@ def ai_rank_tasks(task_list):
     Respond in JSON format like this:
     [
         {{"text": "task 1", "urgency": 7, "importance": 9, "quadrant": "Do Now"}},
-        {{"text": "task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}},
-        ...
+        {{"text": "task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}}
     ]
     """
 
@@ -82,9 +81,11 @@ def ai_rank_tasks(task_list):
             ],
             temperature=0.5,
         )
-        ranked_tasks = json.loads(response["choices"][0]["message"]["content"])
         
-        # Debugging output
+        # Ensure response is valid JSON
+        response_content = response["choices"][0]["message"]["content"]
+        ranked_tasks = json.loads(response_content)
+
         print("✅ AI Response:", ranked_tasks)
         return ranked_tasks
 
@@ -98,20 +99,19 @@ def rank_tasks(task_list: list[Task]):
         ai_result = ai_rank_tasks(task_list)
 
         if ai_result:
-            # Update the tasks with AI-ranked values
             for task in task_list:
                 for ranked_task in ai_result:
                     if task.text == ranked_task["text"]:
-                        task.urgency = ranked_task["urgency"]
-                        task.importance = ranked_task["importance"]
-                        task.quadrant = ranked_task["quadrant"]
+                        task.urgency = ranked_task.get("urgency", 5)  # Default urgency
+                        task.importance = ranked_task.get("importance", 5)  # Default importance
+                        task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))
 
         else:
-            # If AI fails, assign quadrants manually
+            # AI failed, assign quadrants manually
             for task in task_list:
                 task.quadrant = determine_quadrant(task.urgency, task.importance)
 
-        print("🚀 Ranked Tasks:", task_list)
+        print("🚀 Ranked Tasks:", [task.dict() for task in task_list])  # Ensure correct logging
         return task_list
 
     except Exception as e:
