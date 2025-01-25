@@ -11,7 +11,7 @@ interface Task {
   quadrant?: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const EisenhowerMatrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -19,28 +19,33 @@ const EisenhowerMatrix = () => {
 
   const addTask = async () => {
     if (!taskText) return;
-
+  
     const newTask: Task = { id: uuidv4(), text: taskText };
-
+  
     try {
-        const response = await fetch(`${API_URL}/rank-tasks`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify([newTask]), // Send task as an array
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch ranking");
-
-        const rankedTasks: Task[] = await response.json();
-
-        // 🚀 FIX: Ensure quadrants are assigned correctly before updating state
-        setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
+      console.log(`🚀 Sending task to API: ${API_URL}/rank-tasks`, newTask);
+  
+      const response = await fetch(`${API_URL}/rank-tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([newTask]), // Ensure correct format
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ranking: ${response.statusText}`);
+      }
+  
+      const rankedTasks: Task[] = await response.json();
+      console.log("✅ API Response:", rankedTasks);
+  
+      // Ensure tasks are assigned quadrants before updating state
+      setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
     } catch (error) {
-        console.error("Error ranking tasks:", error);
+      console.error("🚨 Error ranking tasks:", error);
     }
-
-    setTaskText(""); // Clear input field
-};
+  
+    setTaskText(""); // Clear input
+  };
 
   // **Function to Remove Completed Task**
   const removeTask = (taskId: string) => {
@@ -87,8 +92,8 @@ const EisenhowerMatrix = () => {
             <h2 style={styles.quadrantTitle}>{quadrant.title}</h2>
             <div style={styles.taskContainer}>
               {tasks
-                .filter((task) => task.quadrant === quadrant.title)
-                .map((task) => (
+                 .filter((task) => task.quadrant?.toLowerCase() === quadrant.title.toLowerCase()) 
+                 .map((task) => (
                   <div key={task.id} style={styles.task}>
                     <input
                       type="checkbox"
