@@ -19,17 +19,10 @@ openai.api_key = openai_api_key
 
 app = FastAPI()
 
-# Define allowed CORS origins (Frontend URLs)
-origins = [
-    "https://eisenhower-matrix-git-main-tea-cats-projects.vercel.app",
-    "https://eisenhower-matrix-backend-production-2c44.up.railway.app",
-    "*",  # Allow all origins for testing, remove in production
-]
-
-# Enable CORS to allow frontend communication
+# Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Allow all origins (Change this in production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,20 +36,21 @@ class Task(BaseModel):
     importance: int = 5
     quadrant: str = ""
 
-# Function to determine quadrant manually (fallback if OpenAI fails)
+# Function to determine quadrant manually if OpenAI fails
 def determine_quadrant(urgency: int, importance: int) -> str:
     if urgency >= 7 and importance >= 7:
-        return "Do Now"
+        return "Do Now"  # High urgency & high importance
     elif urgency < 7 and importance >= 7:
-        return "Schedule"
+        return "Schedule"  # Low urgency & high importance
     elif urgency >= 7 and importance < 7:
-        return "Delegate"
+        return "Delegate"  # High urgency & low importance
     else:
-        return "Eliminate"
+        return "Eliminate"  # Low urgency & low importance
 
-# Function to rank tasks dynamically using OpenAI
+# Function to rank tasks using AI
 def ai_rank_tasks(task_list):
     prompt = f"""
+    You are an expert in time management and productivity.
     Analyze the following tasks and assign:
     - Urgency (1-10 scale, higher means more urgent)
     - Importance (1-10 scale, higher means more important)
@@ -65,10 +59,10 @@ def ai_rank_tasks(task_list):
     Tasks:
     {json.dumps([task.text for task in task_list])}
 
-    Respond ONLY in this JSON format:
+    Respond **only** in this JSON format:
     [
-        {{"text": "Task 1", "urgency": 7, "importance": 9, "quadrant": "Do Now"}},
-        {{"text": "Task 2", "urgency": 3, "importance": 4, "quadrant": "Eliminate"}}
+        {{"text": "Task 1", "urgency": 8, "importance": 9, "quadrant": "Do Now"}},
+        {{"text": "Task 2", "urgency": 3, "importance": 5, "quadrant": "Schedule"}}
     ]
     """
 
@@ -97,14 +91,11 @@ def ai_rank_tasks(task_list):
 
     except Exception as e:
         print("❌ Error calling OpenAI:", str(e))
-        return None  # Fallback if OpenAI fails
-    
-# Endpoint to rank tasks
+        return None  # Fallback if OpenAI call fails
+
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
     try:
-        print("📡 Received Tasks:", [task.dict() for task in task_list])
-        
         ai_result = ai_rank_tasks(task_list)
 
         if ai_result:
@@ -114,8 +105,9 @@ def rank_tasks(task_list: list[Task]):
                         task.urgency = ranked_task.get("urgency", 5)
                         task.importance = ranked_task.get("importance", 5)
                         task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))
+
         else:
-            print("❌ AI Failed, using manual quadrant assignment")
+            # AI failed, assign quadrants manually
             for task in task_list:
                 task.quadrant = determine_quadrant(task.urgency, task.importance)
 
@@ -123,10 +115,9 @@ def rank_tasks(task_list: list[Task]):
         return task_list
 
     except Exception as e:
-        print("❌ Backend Error:", str(e))
+        print("❌ Error processing tasks:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
-# Run the FastAPI app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print(f"🚀 Backend running on port {port}")
