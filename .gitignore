@@ -44,4 +44,17 @@ next-env.d.ts
 .env
 
 # Ignore compiled Python files
-__pycache__/
+backend/__pycache__/
+
+# Ignore Python virtual environment
+venv/
+.venv/
+
+# Ignore Railway deployment files
+.nixpacks.toml
+.railway/
+
+# Ignore Pipenv/Poetry files (if using them)
+Pipfile
+Pipfile.lock
+poetry.lock
