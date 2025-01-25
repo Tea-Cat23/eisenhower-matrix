@@ -21,9 +21,9 @@ app = FastAPI()
 
 # Update CORS origins (Replace with correct frontend deployment URL)
 origins = [
-    "https://eisenhower-matrix-91a6967hj-tea-cats-projects.vercel.app",  # Update this with the actual Vercel URL
+    "https://eisenhower-matrix-91a6967hj-tea-cats-projects.vercel.app",  # Update with your actual Vercel frontend URL
     "https://eisenhower-matrix.vercel.app",  # General fallback
-    "*"  # Allow all for testing (not recommended in production)
+    "http://localhost:3000",  # Allow local development
 ]
 
 # Enable CORS for frontend communication
@@ -43,7 +43,7 @@ class Task(BaseModel):
     importance: int = 5
     quadrant: str = ""
 
-# Function to determine the quadrant manually (fallback in case OpenAI fails)
+# Function to determine quadrant manually (fallback in case OpenAI fails)
 def determine_quadrant(urgency: int, importance: int) -> str:
     if urgency >= 5 and importance >= 5:
         return "Do Now"
@@ -54,7 +54,7 @@ def determine_quadrant(urgency: int, importance: int) -> str:
     else:
         return "Eliminate"
 
-# Function to rank tasks using AI
+# Function to rank tasks using OpenAI
 def ai_rank_tasks(task_list):
     prompt = f"""
     Analyze the following list of tasks and rank them in terms of:
@@ -86,7 +86,7 @@ def ai_rank_tasks(task_list):
         response_content = response["choices"][0]["message"]["content"]
         ranked_tasks = json.loads(response_content)
 
-        print("✅ AI Response:", ranked_tasks)
+        print("✅ AI Response:", ranked_tasks)  # Debugging output
         return ranked_tasks
 
     except Exception as e:
@@ -96,16 +96,17 @@ def ai_rank_tasks(task_list):
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
     try:
+        print(f"📡 Received Tasks: {task_list}")
+
         ai_result = ai_rank_tasks(task_list)
 
         if ai_result:
             for task in task_list:
                 for ranked_task in ai_result:
-                    if task.text == ranked_task["text"]:
-                        task.urgency = ranked_task.get("urgency", 5)  # Default urgency
-                        task.importance = ranked_task.get("importance", 5)  # Default importance
+                    if task.text.lower().strip() == ranked_task["text"].lower().strip():  # Ensure proper matching
+                        task.urgency = ranked_task.get("urgency", 5)
+                        task.importance = ranked_task.get("importance", 5)
                         task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))
-
         else:
             # AI failed, assign quadrants manually
             for task in task_list:
