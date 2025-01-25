@@ -18,29 +18,29 @@ const EisenhowerMatrix = () => {
   const addTask = async () => {
     if (!taskText) return;
 
-    const newTask = { id: uuidv4(), text: taskText };
+    const newTask: Task = { id: uuidv4(), text: taskText };
 
     try {
         const response = await fetch("http://localhost:8000/rank-tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify([newTask]),  // Send task as an array
+            body: JSON.stringify([newTask]), // Send task as an array
         });
 
         if (!response.ok) throw new Error("Failed to fetch ranking");
 
         const rankedTasks: Task[] = await response.json();
-        setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
+        setTasks((prevTasks: Task[]) => [...prevTasks, ...rankedTasks]);
     } catch (error) {
         console.error("Error ranking tasks:", error);
     }
 
     setTaskText(""); // Clear input field
-};
+  };
 
   // **Function to Remove Completed Task**
   const removeTask = (taskId: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task: Task) => task.id !== taskId));
+    setTasks((prevTasks: Task[]) => prevTasks.filter((task) => task.id !== taskId));
   };
 
   return (
@@ -112,15 +112,15 @@ const styles = {
     justifyContent: 'center',
     gap: '10px',
   },
-    input: {
+  input: {
     padding: '10px',
     width: '300px',
     fontSize: '16px',
     borderRadius: '5px',
     border: '1px solid #ccc',
-    backgroundColor: 'white',  // Ensures white background
-    color: 'black',  // Sets text color to black
-    outline: 'none',  // Removes focus outline
+    backgroundColor: 'white',
+    color: 'black',
+    outline: 'none',
   },
   button: {
     padding: '10px 20px',
