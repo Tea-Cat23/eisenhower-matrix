@@ -17,19 +17,12 @@ if not openai_api_key:
 
 openai.api_key = openai_api_key
 
-# Initialize FastAPI
 app = FastAPI()
 
-# CORS settings - Ensure correct frontend URLs
-origins = [
-    "https://eisenhower-matrix.vercel.app",  # Your Vercel frontend
-    "http://localhost:3000",  # Local testing
-    "*"  # Allow all (for debugging)
-]
-
+# Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Allow all origins (Change this in production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,34 +36,33 @@ class Task(BaseModel):
     importance: int = 5
     quadrant: str = ""
 
-# **Manual Quadrant Determination (Backup)**
+# Function to determine quadrant manually if OpenAI fails
 def determine_quadrant(urgency: int, importance: int) -> str:
-    if urgency >= 7 and importance >= 7:
+    if urgency >= 5 and importance >= 5:
         return "Do Now"
-    elif urgency < 7 and importance >= 7:
+    elif urgency < 5 and importance >= 5:
         return "Schedule"
-    elif urgency >= 7 and importance < 7:
+    elif urgency >= 5 and importance < 5:
         return "Delegate"
     else:
         return "Eliminate"
 
-# **AI-Powered Task Ranking**
+# Function to rank tasks using AI
 def ai_rank_tasks(task_list):
     prompt = f"""
-    You are an intelligent productivity assistant. 
-    Analyze and rank these tasks based on:
+    Analyze the following tasks and categorize them based on:
     - Urgency (1-10 scale)
     - Importance (1-10 scale)
     - Best quadrant: "Do Now", "Schedule", "Delegate", or "Eliminate"
-    
-    Tasks:
-    {json.dumps([task.text for task in task_list], indent=2)}
 
-    Return a JSON array where each task has urgency, importance, and a quadrant. 
-    Example:
+    Tasks:
+    {json.dumps([task.text for task in task_list])}
+
+    Respond **only** in valid JSON format:
     [
-        {{"text": "Task 1", "urgency": 8, "importance": 9, "quadrant": "Do Now"}},
-        {{"text": "Task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}}
+        {{"text": "task 1", "urgency": 7, "importance": 9, "quadrant": "Do Now"}},
+        {{"text": "task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}},
+        ...
     ]
     """
 
@@ -78,52 +70,49 @@ def ai_rank_tasks(task_list):
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are an intelligent productivity assistant."},
+                {"role": "system", "content": "You are an expert productivity assistant."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.5,
         )
+        
+        # Extract response content and validate JSON
+        response_text = response["choices"][0]["message"]["content"]
+        ranked_tasks = json.loads(response_text)
+        
+        if not isinstance(ranked_tasks, list):
+            raise ValueError("Invalid response format from OpenAI")
 
-        # Parse AI response
-        response_content = response["choices"][0]["message"]["content"]
-        ranked_tasks = json.loads(response_content)
-
-        print("✅ AI Response:", ranked_tasks)  # Debugging log
+        print("✅ AI Response:", ranked_tasks)
         return ranked_tasks
 
     except Exception as e:
         print("❌ Error calling OpenAI:", str(e))
-        return None  # Return None if AI call fails
+        return None  # Return None if OpenAI call fails
 
-# **API Endpoint: Rank Tasks**
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
     try:
-        print("🔄 Incoming Tasks:", [task.dict() for task in task_list])  # ✅ Debugging
-
         ai_result = ai_rank_tasks(task_list)
 
         if ai_result:
             for task in task_list:
                 for ranked_task in ai_result:
-                    if task.text.strip().lower() == ranked_task["text"].strip().lower():  # Case insensitive match
+                    if task.text == ranked_task["text"]:
                         task.urgency = ranked_task.get("urgency", 5)
                         task.importance = ranked_task.get("importance", 5)
                         task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))
-
         else:
-            print("⚠️ OpenAI failed, using fallback quadrant assignment.")
             for task in task_list:
                 task.quadrant = determine_quadrant(task.urgency, task.importance)
 
-        print("🚀 Final Ranked Tasks Sent to Frontend:", [task.dict() for task in task_list])  # ✅ Debugging
+        print("🚀 Final Ranked Tasks:", [task.dict() for task in task_list])
         return task_list
 
     except Exception as e:
         print("❌ Error processing tasks:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
-# **Run the server**
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print(f"🚀 Backend running on port {port}")
