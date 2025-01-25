@@ -14,13 +14,14 @@ app = FastAPI()
 
 origins = [
     "https://eisenhower-matrix-91a6967hj-tea-cats-projects.vercel.app",  # Replace with your exact frontend URL
-    "http://localhost:3000",  # Allow local development
+    "http://localhost:3000",
+    "https://eisenhower-matrix-<your-vercel-deployment>.vercel.app",
 ]
 
 # Enable CORS to allow frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
