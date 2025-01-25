@@ -22,7 +22,7 @@ app = FastAPI()
 # Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (Change this in production)
+    allow_origins=["*"],  # Allow all origins (Adjust this for production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,7 +36,7 @@ class Task(BaseModel):
     importance: int = 5
     quadrant: str = ""
 
-# Function to determine quadrant manually if OpenAI fails
+# Function to determine quadrant manually (fallback if OpenAI fails)
 def determine_quadrant(urgency: int, importance: int) -> str:
     if urgency >= 7 and importance >= 7:
         return "Do Now"  # High urgency & high importance
@@ -47,7 +47,7 @@ def determine_quadrant(urgency: int, importance: int) -> str:
     else:
         return "Eliminate"  # Low urgency & low importance
 
-# Function to rank tasks using AI
+# Function to rank tasks using GPT-4
 def ai_rank_tasks(task_list):
     prompt = f"""
     You are an expert in time management and productivity.
@@ -68,12 +68,12 @@ def ai_rank_tasks(task_list):
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4-turbo",  # Use GPT-4 Turbo if available
+            model="gpt-4-turbo",  # Use GPT-4 Turbo for faster response
             messages=[
                 {"role": "system", "content": "You are an expert productivity AI."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.2,  # Lower temperature for more deterministic results
+            temperature=0.2,  # Lower temp for more stable results
         )
 
         # Extract response content
