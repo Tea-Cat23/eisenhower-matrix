@@ -17,25 +17,19 @@ if not openai_api_key:
 
 openai.api_key = openai_api_key
 
+# Initialize FastAPI
 app = FastAPI()
 
-# Update CORS origins (Replace with correct frontend deployment URL)
-origins = [
-    "https://eisenhower-matrix-91a6967hj-tea-cats-projects.vercel.app",  # Update with your actual Vercel frontend URL
-    "https://eisenhower-matrix.vercel.app",  # General fallback
-    "http://localhost:3000",  # Allow local development
-]
-
-# Enable CORS for frontend communication
+# ✅ FIXED: Update CORS settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # 🔴 TEMPORARY: Allow all origins for debugging
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Define Task model
+# ✅ Define Task model
 class Task(BaseModel):
     id: str
     text: str
@@ -43,7 +37,7 @@ class Task(BaseModel):
     importance: int = 5
     quadrant: str = ""
 
-# Function to determine quadrant manually (fallback in case OpenAI fails)
+# ✅ Function to manually determine quadrant
 def determine_quadrant(urgency: int, importance: int) -> str:
     if urgency >= 5 and importance >= 5:
         return "Do Now"
@@ -54,18 +48,18 @@ def determine_quadrant(urgency: int, importance: int) -> str:
     else:
         return "Eliminate"
 
-# Function to rank tasks using OpenAI
+# ✅ AI-based ranking function
 def ai_rank_tasks(task_list):
     prompt = f"""
-    Analyze the following list of tasks and rank them in terms of:
-    - Urgency (1-10 scale)
-    - Importance (1-10 scale)
-    - Best quadrant: "Do Now", "Schedule", "Delegate", or "Eliminate"
+    Analyze the following tasks and rank them by:
+    - Urgency (1-10)
+    - Importance (1-10)
+    - Assign quadrant: "Do Now", "Schedule", "Delegate", or "Eliminate".
 
     Tasks:
     {json.dumps([task.text for task in task_list])}
 
-    Respond in JSON format like this:
+    Respond strictly in JSON format:
     [
         {{"text": "task 1", "urgency": 7, "importance": 9, "quadrant": "Do Now"}},
         {{"text": "task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}}
@@ -76,23 +70,27 @@ def ai_rank_tasks(task_list):
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are an intelligent productivity assistant."},
+                {"role": "system", "content": "You are a task-ranking AI."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.5,
         )
-        
-        # Ensure response is valid JSON
+
+        # ✅ Validate AI response format
         response_content = response["choices"][0]["message"]["content"]
         ranked_tasks = json.loads(response_content)
 
         print("✅ AI Response:", ranked_tasks)  # Debugging output
         return ranked_tasks
 
+    except json.JSONDecodeError as e:
+        print("❌ Error: Invalid JSON from OpenAI:", str(e))
+        return None
     except Exception as e:
-        print("❌ Error calling OpenAI:", str(e))
-        return None  # Return None if OpenAI call fails
+        print("❌ OpenAI API Error:", str(e))
+        return None
 
+# ✅ API Endpoint to rank tasks
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
     try:
@@ -116,9 +114,10 @@ def rank_tasks(task_list: list[Task]):
         return task_list
 
     except Exception as e:
-        print("❌ Error processing tasks:", str(e))
+        print("❌ Task Processing Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+# ✅ Run server locally
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print(f"🚀 Backend running on port {port}")
