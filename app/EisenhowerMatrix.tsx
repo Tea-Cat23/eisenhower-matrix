@@ -20,7 +20,7 @@ interface Task {
   text: string;
   urgency?: number;
   importance?: number;
-  quadrant?: string;
+  quadrant?: Quadrant;
 }
 
 // API Base URL (Update with correct backend URL)
@@ -45,7 +45,7 @@ const EisenhowerMatrix = () => {
       text: taskText.trim(),
       urgency: 5,
       importance: 5,
-      quadrant: "",
+      quadrant: undefined, // Let GPT-4o assign the correct quadrant
     };
 
     try {
@@ -62,7 +62,13 @@ const EisenhowerMatrix = () => {
       const rankedTasks: Task[] = await response.json();
       console.log("📥 Received Ranked Tasks:", rankedTasks);
 
-      setTasks(rankedTasks); // Update tasks with new AI-ranked quadrants
+      // Ensure tasks are correctly assigned to quadrants
+      setTasks(
+        rankedTasks.map((task) => ({
+          ...task,
+          quadrant: (task.quadrant as Quadrant) || "Eliminate", // Default to 'Eliminate' if missing
+        }))
+      );
     } catch (error) {
       console.error("❌ Error ranking tasks:", error);
     }
@@ -90,7 +96,7 @@ const EisenhowerMatrix = () => {
           Add Task
         </button>
       </div>
-      
+
       {/* ** Eisenhower Matrix Grid ** */}
       <div style={styles.matrix}>
         {(["Do Now", "Schedule", "Delegate", "Eliminate"] as Quadrant[]).map((quadrant, index) => (
@@ -98,10 +104,7 @@ const EisenhowerMatrix = () => {
             <h2 style={styles.quadrantTitle}>{quadrant}</h2>
             <div style={styles.taskContainer}>
               {tasks
-                .filter((task) => {
-                  console.log(`🔍 Checking Task: ${task.text}, Quadrant: "${task.quadrant}"`);
-                  return task.quadrant?.toLowerCase() === quadrant.toLowerCase();
-                })
+                .filter((task) => task.quadrant === quadrant)
                 .map((task) => (
                   <div key={task.id} style={styles.task}>
                     <input type="checkbox" onChange={() => removeTask(task.id)} style={styles.checkbox} />
