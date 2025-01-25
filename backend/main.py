@@ -12,10 +12,15 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
+origins = [
+    "https://eisenhower-matrix-91a6967hj-tea-cats-projects.vercel.app",  # Replace with your exact frontend URL
+    "http://localhost:3000",  # Allow local development
+]
+
 # Enable CORS to allow frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["ttps://eisenhower-matrix-phi.vercel.app"],  # Allow all origins for now (for debugging)
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
