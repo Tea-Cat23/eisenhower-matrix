@@ -68,7 +68,7 @@ def ai_rank_tasks(task_list):
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are an expert productivity assistant."},
                 {"role": "user", "content": prompt}
