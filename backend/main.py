@@ -20,11 +20,11 @@ openai.api_key = openai_api_key
 # Initialize FastAPI
 app = FastAPI()
 
-# CORS settings - Update these for production
+# CORS settings - Ensure correct frontend URLs
 origins = [
     "https://eisenhower-matrix.vercel.app",  # Your Vercel frontend
     "http://localhost:3000",  # Local testing
-    "*"  # Allow all (only for debugging)
+    "*"  # Allow all (for debugging)
 ]
 
 app.add_middleware(
@@ -57,18 +57,20 @@ def determine_quadrant(urgency: int, importance: int) -> str:
 # **AI-Powered Task Ranking**
 def ai_rank_tasks(task_list):
     prompt = f"""
+    You are an intelligent productivity assistant. 
     Analyze and rank these tasks based on:
     - Urgency (1-10 scale)
     - Importance (1-10 scale)
     - Best quadrant: "Do Now", "Schedule", "Delegate", or "Eliminate"
-
+    
     Tasks:
-    {json.dumps([task.text for task in task_list])}
+    {json.dumps([task.text for task in task_list], indent=2)}
 
-    Respond in JSON format like this:
+    Return a JSON array where each task has urgency, importance, and a quadrant. 
+    Example:
     [
-        {{"text": "task 1", "urgency": 7, "importance": 9, "quadrant": "Do Now"}},
-        {{"text": "task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}}
+        {{"text": "Task 1", "urgency": 8, "importance": 9, "quadrant": "Do Now"}},
+        {{"text": "Task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}}
     ]
     """
 
@@ -86,7 +88,7 @@ def ai_rank_tasks(task_list):
         response_content = response["choices"][0]["message"]["content"]
         ranked_tasks = json.loads(response_content)
 
-        print("✅ AI Response:", ranked_tasks)
+        print("✅ AI Response:", ranked_tasks)  # Debugging log
         return ranked_tasks
 
     except Exception as e:
