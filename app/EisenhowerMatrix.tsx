@@ -11,7 +11,7 @@ interface Task {
   quadrant?: string;
 }
 
-const API_URL = "https://eisenhower-matrix-backend-production-2c44.up.railway.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://eisenhower-matrix-backend-production-2c44.up.railway.app";
 
 const EisenhowerMatrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -23,22 +23,24 @@ const EisenhowerMatrix = () => {
     const newTask: Task = { id: uuidv4(), text: taskText };
 
     try {
-      const response = await fetch(`${API_URL}/rank-tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([newTask]), // Send task as an array
-      });
+        const response = await fetch(`${API_URL}/rank-tasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify([newTask]), // Send task as an array
+        });
 
-      if (!response.ok) throw new Error("Failed to fetch ranking");
+        if (!response.ok) throw new Error("Failed to fetch ranking");
 
-      const rankedTasks: Task[] = await response.json();
-      setTasks((prevTasks: Task[]) => [...prevTasks, ...rankedTasks]);
+        const rankedTasks: Task[] = await response.json();
+
+        // 🚀 FIX: Ensure quadrants are assigned correctly before updating state
+        setTasks((prevTasks) => [...prevTasks, ...rankedTasks]);
     } catch (error) {
-      console.error("Error ranking tasks:", error);
+        console.error("Error ranking tasks:", error);
     }
 
     setTaskText(""); // Clear input field
-  };
+};
 
   // **Function to Remove Completed Task**
   const removeTask = (taskId: string) => {

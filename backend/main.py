@@ -15,7 +15,7 @@ app = FastAPI()
 # Enable CORS to allow frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for now (for debugging)
+    allow_origins=["ttps://eisenhower-matrix-phi.vercel.app"],  # Allow all origins for now (for debugging)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
