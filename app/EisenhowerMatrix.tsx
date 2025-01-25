@@ -90,6 +90,7 @@ const EisenhowerMatrix = () => {
           Add Task
         </button>
       </div>
+      
       {/* ** Eisenhower Matrix Grid ** */}
       <div style={styles.matrix}>
         {(["Do Now", "Schedule", "Delegate", "Eliminate"] as Quadrant[]).map((quadrant, index) => (
