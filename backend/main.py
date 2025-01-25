@@ -99,27 +99,25 @@ def ai_rank_tasks(task_list):
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
     try:
-        # Retrieve all tasks (existing + new)
-        all_tasks = task_list  # Modify this if storing tasks persistently
+        print("🔄 Incoming Tasks:", [task.dict() for task in task_list])  # ✅ Debugging
 
-        # AI ranks all tasks
-        ai_result = ai_rank_tasks(all_tasks)
+        ai_result = ai_rank_tasks(task_list)
 
         if ai_result:
-            for task in all_tasks:
+            for task in task_list:
                 for ranked_task in ai_result:
-                    if task.text == ranked_task["text"]:
-                        task.urgency = ranked_task.get("urgency", 5)  # Default urgency
-                        task.importance = ranked_task.get("importance", 5)  # Default importance
+                    if task.text.strip().lower() == ranked_task["text"].strip().lower():  # Case insensitive match
+                        task.urgency = ranked_task.get("urgency", 5)
+                        task.importance = ranked_task.get("importance", 5)
                         task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))
 
         else:
-            # AI failed → Assign quadrants manually
-            for task in all_tasks:
+            print("⚠️ OpenAI failed, using fallback quadrant assignment.")
+            for task in task_list:
                 task.quadrant = determine_quadrant(task.urgency, task.importance)
 
-        print("🚀 Ranked Tasks:", [task.dict() for task in all_tasks])
-        return all_tasks
+        print("🚀 Final Ranked Tasks Sent to Frontend:", [task.dict() for task in task_list])  # ✅ Debugging
+        return task_list
 
     except Exception as e:
         print("❌ Error processing tasks:", str(e))
