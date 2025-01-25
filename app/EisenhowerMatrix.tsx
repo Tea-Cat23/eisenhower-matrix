@@ -11,6 +11,8 @@ interface Task {
   quadrant?: string;
 }
 
+const API_URL = "https://eisenhower-matrix-backend-production-2c44.up.railway.app";
+
 const EisenhowerMatrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskText, setTaskText] = useState("");
@@ -21,7 +23,7 @@ const EisenhowerMatrix = () => {
     const newTask: Task = { id: uuidv4(), text: taskText };
 
     try {
-      const response = await fetch("http://localhost:8000/rank-tasks", {
+      const response = await fetch(`${API_URL}/rank-tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify([newTask]), // Send task as an array
@@ -140,7 +142,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     gridTemplateColumns: "1fr 1fr",
     gridTemplateRows: "1fr 1fr",
     gap: "20px",
-    width: "70%",
+    width: "90%",
     margin: "auto",
   },
   quadrant: {
