@@ -57,45 +57,48 @@ def determine_quadrant(urgency: int, importance: int) -> str:
 # Function to rank tasks dynamically using OpenAI
 def ai_rank_tasks(task_list):
     prompt = f"""
-    Analyze the following list of tasks and categorize them based on:
-    - Urgency (1-10 scale)
-    - Importance (1-10 scale)
-    - Best quadrant: "Do Now", "Schedule", "Delegate", or "Eliminate"
+    Analyze the following tasks and assign:
+    - Urgency (1-10 scale, higher means more urgent)
+    - Importance (1-10 scale, higher means more important)
+    - Quadrant based on the Eisenhower Matrix: "Do Now", "Schedule", "Delegate", or "Eliminate"
 
     Tasks:
-    {json.dumps([task.text for task in task_list], indent=2)}
+    {json.dumps([task.text for task in task_list])}
 
-    Respond ONLY in valid JSON format like this:
+    Respond ONLY in this JSON format:
     [
-        {{"text": "task 1", "urgency": 9, "importance": 10, "quadrant": "Do Now"}},
-        {{"text": "task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}}
+        {{"text": "Task 1", "urgency": 7, "importance": 9, "quadrant": "Do Now"}},
+        {{"text": "Task 2", "urgency": 3, "importance": 4, "quadrant": "Eliminate"}}
     ]
     """
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4-turbo",  # Use GPT-4 Turbo if available
             messages=[
-                {"role": "system", "content": "You are an AI assistant that categorizes tasks based on urgency and importance."},
+                {"role": "system", "content": "You are an expert productivity AI."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.5,
+            temperature=0.2,  # Lower temperature for more deterministic results
         )
 
+        # Extract response content
         response_text = response["choices"][0]["message"]["content"]
-
-        # Ensure response is valid JSON
         ranked_tasks = json.loads(response_text)
+
+        # Debugging logs
+        print("✅ AI Response:", ranked_tasks)
+
+        # Validate response format
         if not isinstance(ranked_tasks, list):
             raise ValueError("Invalid response format from OpenAI")
 
-        print("✅ AI Response:", ranked_tasks)
         return ranked_tasks
 
     except Exception as e:
-        print("❌ OpenAI API Error:", str(e))
-        return None  # Return None if OpenAI call fails
-
+        print("❌ Error calling OpenAI:", str(e))
+        return None  # Fallback if OpenAI fails
+    
 # Endpoint to rank tasks
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
