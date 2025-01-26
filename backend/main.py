@@ -20,14 +20,10 @@ openai.api_key = openai_api_key
 # Initialize FastAPI app
 app = FastAPI()
 
-allowed_origins = [
-    "https://eisenhower-matrix-phi.vercel.app",
-    "https://eisenhower-matrix-git-main-tea-cats-projects.vercel.app",
-]
 # Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins,
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
     allow_methods=["*"],  # Explicitly define allowed methods
     allow_headers=["*"],  # Allow specific headers
@@ -63,7 +59,7 @@ def ai_rank_tasks(task_list):
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are an intelligent productivity assistant."},
                 {"role": "user", "content": prompt}
