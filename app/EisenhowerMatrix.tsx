@@ -9,9 +9,9 @@ type Quadrant = "Do Now" | "Schedule" | "Delegate" | "Eliminate";
 // Define colors for each quadrant
 const colors: Record<Quadrant, string> = {
   "Do Now": "#4CAF50",  // Green
-  Schedule: "#FFEB3B",  // Yellow
-  Delegate: "#03A9F4",  // Blue
-  Eliminate: "#F44336", // Red
+  "Schedule": "#FFEB3B",  // Yellow
+  "Delegate": "#03A9F4",  // Blue
+  "Eliminate": "#F44336", // Red
 };
 
 // Define Task Interface
@@ -32,9 +32,23 @@ const EisenhowerMatrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskText, setTaskText] = useState("");
 
+  // **Fetch Initial Tasks from Backend**
   useEffect(() => {
-    console.log("🚀 Loaded Tasks:", tasks);
-  }, [tasks]);
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch(`${API_URL}/tasks`);
+        if (!response.ok) throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+        
+        const data = await response.json();
+        console.log("📥 Loaded Tasks:", data);
+        setTasks(data);
+      } catch (error) {
+        console.error("❌ Error fetching tasks:", error);
+      }
+    };
+
+    fetchTasks();
+  }, []);
 
   // **Add Task Function**
   const addTask = async () => {
@@ -45,7 +59,6 @@ const EisenhowerMatrix = () => {
       text: taskText.trim(),
       urgency: 5,
       importance: 5,
-      quadrant: "",
     };
   
     console.log("📡 Sending Task to Backend:", newTask);
@@ -54,7 +67,7 @@ const EisenhowerMatrix = () => {
       const response = await fetch(`${API_URL}/rank-tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([newTask]), // 🔹 Send only the new task
+        body: JSON.stringify([newTask]),
       });
   
       if (!response.ok) {
@@ -64,11 +77,12 @@ const EisenhowerMatrix = () => {
       const rankedTasks = await response.json();
       console.log("📥 Received Ranked Tasks:", rankedTasks);
   
-      if (!rankedTasks.length) {
+      if (!Array.isArray(rankedTasks) || rankedTasks.length === 0) {
         console.error("❌ AI did not rank tasks. Check OpenAI response.");
+        return;
       }
-  
-      setTasks((prevTasks) => [...prevTasks, ...rankedTasks]); // Append new ranked task
+
+      setTasks((prevTasks) => [...prevTasks, rankedTasks[0]]); // Append new ranked task
     } catch (error) {
       console.error("❌ Error ranking tasks:", error);
     }
@@ -77,8 +91,18 @@ const EisenhowerMatrix = () => {
   };
 
   // **Remove Completed Task**
-  const removeTask = (taskId: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+  const removeTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete task");
+
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+    } catch (error) {
+      console.error("❌ Error deleting task:", error);
+    }
   };
 
   return (
@@ -99,8 +123,8 @@ const EisenhowerMatrix = () => {
 
       {/* ** Eisenhower Matrix Grid ** */}
       <div style={styles.matrix}>
-        {(["Do Now", "Schedule", "Delegate", "Eliminate"] as Quadrant[]).map((quadrant, index) => (
-          <div key={index} style={{ ...styles.quadrant, backgroundColor: colors[quadrant] }}>
+        {(["Do Now", "Schedule", "Delegate", "Eliminate"] as Quadrant[]).map((quadrant) => (
+          <div key={quadrant} style={{ ...styles.quadrant, backgroundColor: colors[quadrant] }}>
             <h2 style={styles.quadrantTitle}>{quadrant}</h2>
             <div style={styles.taskContainer}>
               {tasks
