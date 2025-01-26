@@ -101,7 +101,7 @@ def ai_rank_tasks(task_list):
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
     try:
-        print("🔵 Received Tasks:", task_list)
+        print("🔵 Received Tasks:", task_list)  # Log the incoming tasks
 
         # Call OpenAI ranking function
         ai_result = ai_rank_tasks(task_list)
