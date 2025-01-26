@@ -5,10 +5,15 @@ import uvicorn
 import openai
 import os
 import json
+import warnings
 from dotenv import load_dotenv
+
 
 # Load environment variables
 load_dotenv()
+
+# Ignore warnings
+warnings.filterwarnings("ignore")
 
 # Ensure OpenAI API Key is loaded
 openai_api_key = os.getenv("OPENAI_API_KEY")
