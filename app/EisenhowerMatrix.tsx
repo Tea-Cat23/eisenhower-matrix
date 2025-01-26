@@ -52,11 +52,11 @@ const EisenhowerMatrix: React.FC = () => {
   const addTask = async () => {
     if (!taskText) return;
 
-    const newTask = { id: uuidv4(), text: taskText };
+    const newTask = { id: generateUUID(), text: taskText, urgency: 5, importance: 5, quadrant: "" };
     const updatedTasks = [...tasks, newTask];
 
     try {
-      const response = await fetch("http://localhost:8000/rank-tasks", {
+      const response = await fetch(`${API_URL}/rank-tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedTasks),

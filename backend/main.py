@@ -52,7 +52,6 @@ class Task(BaseModel):
 # In-memory task storage
 tasks = []
 
-
 # Function to rank tasks using GPT-4
 def ai_rank_tasks(task_list):
     prompt = f"""
@@ -93,7 +92,6 @@ def ai_rank_tasks(task_list):
         print(f"❌ Error calling OpenAI: {e}")
         return None
 
-
 # API Endpoint to rank tasks
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
@@ -122,6 +120,7 @@ def rank_tasks(task_list: list[Task]):
         print("✅ Final Updated Tasks:", updated_tasks)
 
         # Store tasks in-memory
+        tasks.clear()
         tasks.extend(updated_tasks)
 
         return updated_tasks
@@ -129,7 +128,6 @@ def rank_tasks(task_list: list[Task]):
     except Exception as e:
         print("❌ Backend Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # API Endpoint to get all tasks
 @app.get("/tasks")
@@ -140,7 +138,6 @@ def get_tasks():
     except Exception as e:
         print("❌ Error fetching tasks:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # API Endpoint to delete a task
 @app.delete("/tasks/{task_id}")
@@ -153,7 +150,6 @@ def delete_task(task_id: str):
     except Exception as e:
         print("❌ Error deleting task:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # Run the app on Railway
 if __name__ == "__main__":
