@@ -51,27 +51,37 @@ const EisenhowerMatrix: React.FC = () => {
   // Function to Add Task
   const addTask = async () => {
     if (!taskText) return;
-
+  
     const newTask = { id: generateUUID(), text: taskText, urgency: 5, importance: 5, quadrant: "" };
     const updatedTasks = [...tasks, newTask];
-
+  
     try {
       const response = await fetch(`${API_URL}/rank-tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedTasks),
       });
-
-      if (!response.ok) throw new Error("Failed to fetch ranking");
-
+  
+      if (!response.ok) {
+        throw new Error("Failed to fetch ranking. Please try again later.");
+      }
+  
       const rankedTasks = await response.json();
       setTasks(rankedTasks);
     } catch (error) {
       console.error("Error ranking tasks:", error);
+  
+      // Narrow the type of the error
+      if (error instanceof Error) {
+        alert(error.message); // Display error message to the user
+      } else {
+        alert("An unexpected error occurred. Please try again later.");
+      }
     }
-
+  
     setTaskText("");
   };
+  
 
   // Function to Delete Task
   const deleteTask = async (taskId: string) => {
