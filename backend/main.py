@@ -22,11 +22,16 @@ app = FastAPI()
 # Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (Adjust this for production)
+    allow_origins=["*"],  # Allow all origins (Adjust for production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health Check Route
+@app.get("/")
+async def root():
+    return {"message": "✅ Eisenhower Matrix API is running!"}
 
 # Define Task model
 class Task(BaseModel):
@@ -48,11 +53,10 @@ def determine_quadrant(urgency: int, importance: int) -> str:
         return "Eliminate"  # Low urgency & low importance
 
 # Function to rank tasks using GPT-4
-# Function to rank tasks using GPT-4
 def ai_rank_tasks(task_list):
     task_texts = [task.text for task in task_list]
-    
-    prompt = """
+
+    prompt = f"""
 You are an AI that classifies tasks using the Eisenhower Matrix.
 - Assign each task an urgency score (1-10).
 - Assign each task an importance score (1-10).
@@ -61,6 +65,15 @@ You are an AI that classifies tasks using the Eisenhower Matrix.
     "Schedule" (Low Urgency, High Importance)
     "Delegate" (High Urgency, Low Importance)
     "Eliminate" (Low Urgency, Low Importance)
+
+Tasks:
+{json.dumps(task_texts)}
+
+Respond **ONLY** in valid JSON format:
+[
+    {{"text": "Task 1", "urgency": 9, "importance": 10, "quadrant": "Do Now"}},
+    {{"text": "Task 2", "urgency": 2, "importance": 3, "quadrant": "Eliminate"}}
+]
 """
 
     try:
@@ -97,7 +110,6 @@ async def rank_tasks(task_list: list[Task]):
                         task.urgency = ranked_task.get("urgency", 5)
                         task.importance = ranked_task.get("importance", 5)
                         task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))
-
         else:
             for task in task_list:
                 task.quadrant = determine_quadrant(task.urgency, task.importance)
