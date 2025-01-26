@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NODE_ENV === "production"
+  ? "https://eisenhower-matrix-backend-production-2c44.up.railway.app"
+  : "http://localhost:8000";
 
 interface Task {
   id: string;
