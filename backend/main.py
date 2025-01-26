@@ -48,25 +48,20 @@ def determine_quadrant(urgency: int, importance: int) -> str:
         return "Eliminate"  # Low urgency & low importance
 
 # Function to rank tasks using GPT-4
+# Function to rank tasks using GPT-4
 def ai_rank_tasks(task_list):
     task_texts = [task.text for task in task_list]
-
-    prompt = f"""
-    You are an expert in time management and the Eisenhower Matrix. Rank the following tasks:
     
-    - Assign each task an urgency score from 1 to 10.
-    - Assign each task an importance score from 1 to 10.
-    - Assign the correct quadrant: "Do Now", "Schedule", "Delegate", or "Eliminate".
-
-    Tasks:
-    {json.dumps(task_texts)}
-
-    Respond **ONLY** in valid JSON format:
-    [
-        {{"text": "Do homework", "urgency": 8, "importance": 9, "quadrant": "Do Now"}},
-        {{"text": "Watch Netflix", "urgency": 2, "importance": 3, "quadrant": "Eliminate"}}
-    ]
-    """
+    prompt = """
+You are an AI that classifies tasks using the Eisenhower Matrix.
+- Assign each task an urgency score (1-10).
+- Assign each task an importance score (1-10).
+- Categorize them into one of four quadrants:
+    "Do Now" (High Urgency, High Importance)
+    "Schedule" (Low Urgency, High Importance)
+    "Delegate" (High Urgency, Low Importance)
+    "Eliminate" (Low Urgency, Low Importance)
+"""
 
     try:
         response = openai.ChatCompletion.create(
@@ -77,22 +72,18 @@ def ai_rank_tasks(task_list):
             ],
             temperature=0.3,
         )
-
         response_text = response["choices"][0]["message"]["content"]
-        print("📥 OpenAI Raw Response:", response_text)  # Log exact response
+        print("📥 OpenAI Raw Response:", response_text)  # Debugging
 
-        # Ensure the response is valid JSON
         ranked_tasks = json.loads(response_text)
-
         if not isinstance(ranked_tasks, list):
             raise ValueError("Invalid OpenAI response format. Expected a list.")
 
         print("✅ AI Parsed Tasks:", ranked_tasks)  # Log the parsed result
         return ranked_tasks
-
     except Exception as e:
         print("❌ OpenAI Error:", str(e))
-        return None  # If OpenAI fails, return None
+        return None  # Return None if OpenAI fails
 
 @app.post("/rank-tasks")
 async def rank_tasks(task_list: list[Task]):
