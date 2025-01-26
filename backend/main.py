@@ -30,10 +30,6 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],  # Allow specific headers
 )
 
-# Root endpoint to check if the server is running
-@app.get("/")
-async def root():
-    return {"message": "🚀 Eisenhower Matrix Backend is running!"}
 
 # Define Task model
 class Task(BaseModel):
@@ -43,39 +39,24 @@ class Task(BaseModel):
     importance: int = 5
     quadrant: str = ""
 
-# Function to determine quadrant manually (fallback if OpenAI fails)
-def determine_quadrant(urgency: int, importance: int) -> str:
-    if urgency >= 7 and importance >= 7:
-        return "Do Now"  # High urgency & high importance
-    elif urgency < 7 and importance >= 7:
-        return "Schedule"  # Low urgency & high importance
-    elif urgency >= 7 and importance < 7:
-        return "Delegate"  # High urgency & low importance
-    else:
-        return "Eliminate"  # Low urgency & low importance
-
 # Function to rank tasks using GPT-4
 def ai_rank_tasks(task_list):
-    task_texts = [task.text for task in task_list]
-
     prompt = f"""
-You are an AI that classifies tasks using the Eisenhower Matrix.
-- Assign each task an urgency score (1-10).
-- Assign each task an importance score (1-10).
-- Categorize them into one of four quadrants:
-    "Do Now" (High Urgency, High Importance)
-    "Schedule" (Low Urgency, High Importance)
-    "Delegate" (High Urgency, Low Importance)
-    "Eliminate" (Low Urgency, Low Importance)
+    Analyze the following list of tasks and rank them in terms of:
+    - Urgency (1-10 scale)
+    - Importance (1-10 scale)
+    - Best quadrant: "Do Now", "Schedule", "Delegate", or "Eliminate"
 
-Tasks:
-{json.dumps(task_texts)}
+    Tasks:
+    {json.dumps([task.text for task in task_list])}
 
-Respond ONLY in valid JSON format:
-[
-    {{"text": "Example Task", "urgency": 8, "importance": 6, "quadrant": "Delegate"}}
-]
-"""
+    Respond in JSON format like this:
+    [
+        {{"text": "task 1", "urgency": 7, "importance": 9, "quadrant": "Do Now"}},
+        {{"text": "task 2", "urgency": 5, "importance": 6, "quadrant": "Schedule"}},
+        ...
+    ]
+    """
 
     try:
         response = openai.ChatCompletion.create(
@@ -84,46 +65,29 @@ Respond ONLY in valid JSON format:
                 {"role": "system", "content": "You are an intelligent productivity assistant."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3,
+            temperature=0.5,
         )
-        response_text = response["choices"][0]["message"]["content"]
-        print("📥 OpenAI Raw Response:", response_text)  # Debugging
-
-        ranked_tasks = json.loads(response_text)
-        if not isinstance(ranked_tasks, list):
-            raise ValueError("Invalid OpenAI response format. Expected a list.")
-
-        print("✅ AI Parsed Tasks:", ranked_tasks)  # Log the parsed result
+        ranked_tasks = json.loads(response["choices"][0]["message"]["content"])
         return ranked_tasks
     except Exception as e:
-        print("❌ OpenAI Error:", str(e))
-        return None  # Return None if OpenAI fails
+        print("Error calling OpenAI:", str(e))
+        return None
 
-@app.options("/rank-tasks")
-async def preflight():
-    return {"message": "CORS preflight successful"}
 
 @app.post("/rank-tasks")
-async def rank_tasks(task_list: list[Task]):
+def rank_tasks(task_list: list[Task]):
     try:
         ai_result = ai_rank_tasks(task_list)
-
         if ai_result:
+            # Update the tasks with AI-ranked values
             for task in task_list:
                 for ranked_task in ai_result:
-                    if task.text.strip().lower() == ranked_task["text"].strip().lower():
-                        task.urgency = ranked_task.get("urgency", 5)
-                        task.importance = ranked_task.get("importance", 5)
-                        task.quadrant = ranked_task.get("quadrant", determine_quadrant(task.urgency, task.importance))
-        else:
-            for task in task_list:
-                task.quadrant = determine_quadrant(task.urgency, task.importance)
-
-        print("🚀 Final Ranked Tasks:", [task.dict() for task in task_list])
+                    if task.text == ranked_task["text"]:
+                        task.urgency = ranked_task["urgency"]
+                        task.importance = ranked_task["importance"]
+                        task.quadrant = ranked_task["quadrant"]
         return task_list
-
     except Exception as e:
-        print("❌ Error processing tasks:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
