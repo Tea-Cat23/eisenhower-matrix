@@ -20,10 +20,11 @@ openai.api_key = openai_api_key
 # Initialize FastAPI app
 app = FastAPI()
 
+allow_origins = ["https://eisenhower-matrix-git-main-tea-cats-projects.vercel.app"]
 # Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://eisenhower-matrix-1hp0sjfvf-tea-cats-projects.vercel.app"],  # Restrict to your frontend
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],  # Explicitly define allowed methods
     allow_headers=["Content-Type", "Authorization"],  # Allow specific headers
