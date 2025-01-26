@@ -54,7 +54,7 @@ const EisenhowerMatrix = () => {
       const response = await fetch(`${API_URL}/rank-tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([...tasks, newTask]), // Send all tasks
+        body: JSON.stringify([newTask]), // 🔹 Send only the new task
       });
   
       if (!response.ok) {
@@ -64,12 +64,11 @@ const EisenhowerMatrix = () => {
       const rankedTasks = await response.json();
       console.log("📥 Received Ranked Tasks:", rankedTasks);
   
-      // If AI ranking is empty, show error
       if (!rankedTasks.length) {
         console.error("❌ AI did not rank tasks. Check OpenAI response.");
       }
   
-      setTasks(rankedTasks);
+      setTasks((prevTasks) => [...prevTasks, ...rankedTasks]); // Append new ranked task
     } catch (error) {
       console.error("❌ Error ranking tasks:", error);
     }

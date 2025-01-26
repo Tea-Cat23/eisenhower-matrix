@@ -17,21 +17,22 @@ if not openai_api_key:
 
 openai.api_key = openai_api_key
 
+# Initialize FastAPI app
 app = FastAPI()
 
 # Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (Adjust for production)
+    allow_origins=["https://eisenhower-matrix.vercel.app"],  # Allow all origins (Adjust this for production)
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Health Check Route
+# Root endpoint to check if the server is running
 @app.get("/")
 async def root():
-    return {"message": "✅ Eisenhower Matrix API is running!"}
+    return {"message": "🚀 Eisenhower Matrix Backend is running!"}
 
 # Define Task model
 class Task(BaseModel):
@@ -69,10 +70,9 @@ You are an AI that classifies tasks using the Eisenhower Matrix.
 Tasks:
 {json.dumps(task_texts)}
 
-Respond **ONLY** in valid JSON format:
+Respond ONLY in valid JSON format:
 [
-    {{"text": "Task 1", "urgency": 9, "importance": 10, "quadrant": "Do Now"}},
-    {{"text": "Task 2", "urgency": 2, "importance": 3, "quadrant": "Eliminate"}}
+    {{"text": "Example Task", "urgency": 8, "importance": 6, "quadrant": "Delegate"}}
 ]
 """
 
