@@ -50,38 +50,24 @@ const EisenhowerMatrix: React.FC = () => {
 
   // Function to Add Task
   const addTask = async () => {
-    if (!taskText.trim()) return;
+    if (!taskText) return;
 
-    const newTask: Omit<Task, "quadrant"> = {
-      id: generateUUID(),
-      text: taskText.trim(),
-      urgency: Math.floor(Math.random() * 5) + 1,
-      importance: Math.floor(Math.random() * 5) + 1,
-    };
-
-    console.log("📤 Sending Task to Backend:", newTask);
+    const newTask = { id: uuidv4(), text: taskText };
+    const updatedTasks = [...tasks, newTask];
 
     try {
-      const response = await fetch(`${API_URL}/rank-tasks`, {
+      const response = await fetch("http://localhost:8000/rank-tasks", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify([newTask]),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedTasks),
       });
 
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      if (!response.ok) throw new Error("Failed to fetch ranking");
 
-      const rankedTasks: Task[] = await response.json();
-      console.log("📥 Received Ranked Tasks:", rankedTasks);
-
-      if (Array.isArray(rankedTasks) && rankedTasks.length > 0) {
-        setTasks((prevTasks) => [...prevTasks, rankedTasks[0]]);
-      } else {
-        console.error("❌ AI did not return ranked tasks.");
-      }
+      const rankedTasks = await response.json();
+      setTasks(rankedTasks);
     } catch (error) {
-      console.error("❌ Error ranking tasks:", error);
+      console.error("Error ranking tasks:", error);
     }
 
     setTaskText("");
