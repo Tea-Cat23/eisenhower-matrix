@@ -23,10 +23,10 @@ app = FastAPI()
 # Allow CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://eisenhower-matrix.vercel.app"],  # Allow all origins (Adjust this for production)
+    allow_origins=["https://eisenhower-matrix-1hp0sjfvf-tea-cats-projects.vercel.app"],  # Restrict to your frontend
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],  # Explicitly define allowed methods
+    allow_headers=["Content-Type", "Authorization"],  # Allow specific headers
 )
 
 # Root endpoint to check if the server is running
@@ -98,6 +98,10 @@ Respond ONLY in valid JSON format:
         print("❌ OpenAI Error:", str(e))
         return None  # Return None if OpenAI fails
 
+@app.options("/rank-tasks")
+async def preflight():
+    return {"message": "CORS preflight successful"}
+
 @app.post("/rank-tasks")
 async def rank_tasks(task_list: list[Task]):
     try:
@@ -122,6 +126,6 @@ async def rank_tasks(task_list: list[Task]):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.getenv("PORT", 8000))
     print(f"🚀 Backend running on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
