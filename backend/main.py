@@ -72,7 +72,7 @@ def ai_rank_tasks(task_list):
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Use 3.5 for cost efficiency
+            model="gpt-4o",  # Use 3.5 for cost efficiency
             messages=[
                 {"role": "system", "content": "You are an intelligent productivity assistant."},
                 {"role": "user", "content": prompt}
