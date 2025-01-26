@@ -49,6 +49,10 @@ class Task(BaseModel):
     importance: int = 5
     quadrant: str = ""
 
+# In-memory task storage
+tasks = []
+
+
 # Function to rank tasks using GPT-4
 def ai_rank_tasks(task_list):
     prompt = f"""
@@ -89,6 +93,7 @@ def ai_rank_tasks(task_list):
         print(f"❌ Error calling OpenAI: {e}")
         return None
 
+
 # API Endpoint to rank tasks
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
@@ -115,31 +120,40 @@ def rank_tasks(task_list: list[Task]):
                     updated_tasks.append(updated_task)
 
         print("✅ Final Updated Tasks:", updated_tasks)
+
+        # Store tasks in-memory
+        tasks.extend(updated_tasks)
+
         return updated_tasks
-    
+
     except Exception as e:
         print("❌ Backend Error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # API Endpoint to get all tasks
 @app.get("/tasks")
 def get_tasks():
     try:
         print("📥 Fetching Tasks...")
-        return {"tasks": []}  # Implement database or memory storage logic here
+        return tasks  # Returns in-memory tasks
     except Exception as e:
         print("❌ Error fetching tasks:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # API Endpoint to delete a task
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: str):
     try:
-        print(f"🗑️ Deleting Task: {task_id}")
+        global tasks
+        tasks = [task for task in tasks if task.id != task_id]
+        print(f"🗑️ Deleted Task: {task_id}")
         return {"message": f"Task {task_id} deleted successfully"}
     except Exception as e:
         print("❌ Error deleting task:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # Run the app on Railway
 if __name__ == "__main__":
