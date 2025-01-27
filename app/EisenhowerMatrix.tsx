@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 
-const API_URL = process.env.NODE_ENV === "production"
-  ? "https://eisenhower-matrix-backend-production-2c44.up.railway.app"
-  : "http://localhost:8000";
+const API_URL = "http://localhost:8000"; // Keep local for now
 
 interface Task {
   id: string;
@@ -14,132 +13,84 @@ interface Task {
   quadrant: string;
 }
 
-const QUADRANTS: Record<string, string> = {
+// Quadrant Color Mapping
+const QUADRANTS = {
   "Do Now": "#4CAF50",
   "Schedule": "#FFEB3B",
   "Delegate": "#03A9F4",
   "Eliminate": "#F44336",
 };
 
-const EisenhowerMatrix: React.FC = () => {
+const EisenhowerMatrix = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskText, setTaskText] = useState("");
 
-  // Fetch tasks from the backend
+  // Fetch tasks on load
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    console.log("📥 Loaded Tasks:", tasks);
+  }, [tasks]);
 
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch(`${API_URL}/tasks`);
-      if (!response.ok) throw new Error(`Failed to fetch tasks: ${response.statusText}`);
-
-      const data: Task[] = await response.json();
-      console.log("✅ Fetched Tasks:", data);
-      setTasks(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("❌ Error fetching tasks:", error);
-    }
-  };
-
-  // Generate UUID for tasks (Fallback for browsers without crypto API)
-  const generateUUID = (): string => {
-    return crypto.randomUUID
-      ? crypto.randomUUID()
-      : Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-  };
-
-  // Function to Add Task
+  // Function to Add a Task
   const addTask = async () => {
-    if (!taskText) return;
-  
-    const newTask = { id: generateUUID(), text: taskText, urgency: 5, importance: 5, quadrant: "" };
-    const updatedTasks = [...tasks, newTask];
-  
+    if (!taskText.trim()) return;
+
+    const newTask: Task = {
+      id: uuidv4(),
+      text: taskText.trim(),
+      urgency: 5,
+      importance: 5,
+      quadrant: "",
+    };
+
+    console.log("📤 Sending Task to Backend:", newTask);
+
     try {
       const response = await fetch(`${API_URL}/rank-tasks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedTasks),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([newTask]),
       });
-  
-      if (!response.ok) {
-        throw new Error("Failed to fetch ranking. Please try again later.");
-      }
-  
-      const rankedTasks = await response.json();
-      setTasks(rankedTasks);
-    } catch (error) {
-      console.error("Error ranking tasks:", error);
-  
-      // Narrow the type of the error
-      if (error instanceof Error) {
-        alert(error.message); // Display error message to the user
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+      const rankedTasks: Task[] = await response.json();
+      console.log("📥 Received Ranked Tasks:", rankedTasks);
+
+      if (Array.isArray(rankedTasks) && rankedTasks.length > 0) {
+        setTasks((prevTasks) => [...prevTasks, rankedTasks[0]]);
       } else {
-        alert("An unexpected error occurred. Please try again later.");
+        console.error("❌ AI did not return ranked tasks.");
       }
+    } catch (error) {
+      console.error("❌ Error ranking tasks:", error);
     }
-  
+
     setTaskText("");
   };
-  
 
   // Function to Delete Task
-  const deleteTask = async (taskId: string) => {
-    try {
-      const response = await fetch(`${API_URL}/tasks/${taskId}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Failed to delete task");
-
-      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-    } catch (error) {
-      console.error("❌ Error deleting task:", error);
-    }
+  const deleteTask = (taskId: string) => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>🚀 Eisenhower Matrix AI</h1>
+    <div style={{ textAlign: "center", padding: "20px", fontFamily: "Arial, sans-serif", backgroundColor: "#121212", minHeight: "100vh" }}>
+      <h1 style={{ color: "white", fontSize: "24px", fontWeight: "bold", marginBottom: "20px" }}>🚀 Eisenhower Matrix AI</h1>
 
-      {/* Input for adding tasks */}
-      <div style={styles.inputContainer}>
-        <input
-          type="text"
-          placeholder="Enter a task..."
-          value={taskText}
-          onChange={(e) => setTaskText(e.target.value)}
-          style={styles.input}
-        />
-        <button onClick={addTask} style={styles.button}>
-          Add Task
-        </button>
+      <div style={{ marginBottom: "20px", display: "flex", justifyContent: "center", gap: "10px" }}>
+        <input type="text" value={taskText} onChange={(e) => setTaskText(e.target.value)} placeholder="Enter a task..." style={{ padding: "10px", width: "300px", fontSize: "16px", borderRadius: "5px", border: "1px solid #ccc" }} />
+        <button onClick={addTask} style={{ padding: "10px 20px", backgroundColor: "#6200ea", color: "white", border: "none", cursor: "pointer", fontSize: "16px", borderRadius: "5px" }}>Add Task</button>
       </div>
 
-      {/* Quadrant Display */}
-      <div style={styles.matrix}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: "20px", width: "70%", margin: "auto" }}>
         {Object.keys(QUADRANTS).map((quadrant) => (
-          <div
-            key={quadrant}
-            style={{
-              ...styles.quadrant,
-              backgroundColor: QUADRANTS[quadrant],
-            }}
-          >
-            <h2 style={styles.quadrantTitle}>{quadrant}</h2>
-            <div style={styles.taskContainer}>
-              {tasks
-                .filter((task) => task.quadrant === quadrant)
-                .map((task) => (
-                  <div key={task.id} style={styles.task}>
-                    <input
-                      type="checkbox"
-                      onChange={() => deleteTask(task.id)}
-                      style={styles.checkbox}
-                    />
-                    {task.text}
-                  </div>
-                ))}
-            </div>
+          <div key={quadrant} style={{ padding: "20px", backgroundColor: QUADRANTS[quadrant as keyof typeof QUADRANTS], borderRadius: "10px" }}>
+            <h2 style={{ color: "white" }}>{quadrant}</h2>
+            {tasks.filter((task) => task.quadrant === quadrant).map((task) => (
+              <p key={task.id}>{task.text}</p>
+            ))}
           </div>
         ))}
       </div>
@@ -174,9 +125,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "16px",
     borderRadius: "5px",
     border: "1px solid #ccc",
-    backgroundColor: "white",
-    color: "black",
+    backgroundColor: "#fff",  // White input background
+    color: "#000",            // Black text color
     outline: "none",
+    caretColor: "#6200ea",    // Optional: Purple cursor for better visibility
+    fontWeight: "500",        // Slightly bolder text for readability
   },
   button: {
     padding: "10px 20px",
