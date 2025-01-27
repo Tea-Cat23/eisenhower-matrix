@@ -76,7 +76,10 @@ def ai_rank_tasks(task_list):
         print(f"❌ Error calling OpenAI: {e}")
         return None
     
-    
+@app.get("/")
+def read_root():
+    return {"message": "Eisenhower Matrix API is running"}
+
 # API Endpoint to Rank Tasks
 @app.post("/rank-tasks")
 def rank_tasks(task_list: list[Task]):
@@ -110,4 +113,4 @@ def rank_tasks(task_list: list[Task]):
 
 # Run Locally
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
