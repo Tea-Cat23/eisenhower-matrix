@@ -1,19 +1,7 @@
 {
-    "build": {
-      "base": ".",
-      "commands": [
-        "apt update && apt install -y python3 python3-pip",
-        "pip3 install --upgrade pip",
-        "pip3 install -r backend/requirements.txt"
-      ]
-    },
-    "deploy": {
-      "startCommand": "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8080",
-      "healthcheckPath": "/docs",
-      "env": {
-        "PORT": "8080",
-        "NEXT_PUBLIC_API_URL": "https://eisenhower-matrix-backend-production.up.railway.app",
-        "PYTHONUNBUFFERED": "1"
-      }
-    }
-  }
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pip install -r backend/requirements.txt"
+  },
+  "start": "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
+}
