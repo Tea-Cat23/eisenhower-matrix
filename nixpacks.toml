@@ -5,12 +5,15 @@ nixPkgs = [
   "python311Packages.fastapi",
   "python311Packages.uvicorn",
   "python311Packages.pydantic",
-  "python311Packages.requests"
+  "python311Packages.requests",
+  "python311Packages.setuptools",
+  "python311Packages.wheel",
+  "python311Packages.pip"
 ]
 
 [phases.build]
 cmds = [
-  "npm install"  # Ensures Node dependencies are installed properly
+  "npm install"
 ]
 
 [start]
