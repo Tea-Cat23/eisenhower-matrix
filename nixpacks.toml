@@ -1,13 +1,12 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "python311", "python311Packages.pip", "python311Packages.virtualenv"]
+nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
 
 [phases.build]
 cmds = [
-  "python3 -m venv /app/venv",  # Create virtual environment
-  "/app/venv/bin/pip install --upgrade pip",
-  "/app/venv/bin/pip install -r backend/requirements.txt",
+  "pip install --upgrade pip",
+  "pip install uvicorn fastapi -r backend/requirements.txt",
   "npm install"
 ]
 
 [start]
-cmd = "/app/venv/bin/python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
+cmd = "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
