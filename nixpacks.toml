@@ -1,11 +1,16 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "python311", "python311Packages.pip", "python311Packages.uvicorn", "python311Packages.fastapi"]
+nixPkgs = [
+  "nodejs_20",
+  "python311",
+  "python311Packages.fastapi",
+  "python311Packages.uvicorn",
+  "python311Packages.pydantic",
+  "python311Packages.requests"
+]
 
 [phases.build]
 cmds = [
-  "pip install --upgrade pip --user",
-  "pip install -r backend/requirements.txt --user",
-  "npm install"
+  "npm install"  # Ensures Node dependencies are installed
 ]
 
 [start]
