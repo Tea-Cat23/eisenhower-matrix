@@ -13,8 +13,10 @@ nixPkgs = [
 
 [phases.build]
 cmds = [
+  "pip install --break-system-packages --upgrade pip",
+  "pip install --break-system-packages uvicorn fastapi -r backend/requirements.txt",
   "npm install"
 ]
 
 [start]
-cmd = "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
+cmd = "/root/.nix-profile/bin/python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
