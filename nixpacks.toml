@@ -2,16 +2,15 @@
 nixPkgs = [
   "nodejs_20",
   "python311",
-  "python311Packages.pip",
   "python311Packages.virtualenv"
 ]
 
 [phases.build]
 cmds = [
-  "python3 -m venv /app/venv",  # ✅ Create a virtual environment in /app
-  "source /app/venv/bin/activate",  # ✅ Activate virtual environment
-  "python3 -m pip install --upgrade pip",
-  "python3 -m pip install -r backend/requirements.txt",
+  "python3 -m venv /app/venv",  # ✅ Create a Virtual Environment
+  "source /app/venv/bin/activate",  # ✅ Activate Virtual Environment
+  "pip install --no-cache-dir --upgrade pip",  # ✅ Upgrade pip *inside venv*
+  "pip install --no-cache-dir -r backend/requirements.txt",  # ✅ Install dependencies
   "npm install"
 ]
 
