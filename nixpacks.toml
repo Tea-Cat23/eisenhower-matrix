@@ -1,10 +1,8 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
+nixPkgs = ["nodejs_20", "python311", "python311Packages.pip", "python311Packages.uvicorn", "python311Packages.fastapi"]
 
 [phases.build]
 cmds = [
-  "pip install --upgrade pip",
-  "pip install uvicorn fastapi -r backend/requirements.txt",
   "npm install"
 ]
 
