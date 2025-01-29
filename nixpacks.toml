@@ -10,10 +10,10 @@ nixPkgs = [
 cmds = [
   "python3 -m venv /app/venv",  # Create virtual environment
   "source /app/venv/bin/activate",  # Activate virtualenv
-  "/app/venv/bin/python -m pip install --upgrade pip",  # Explicitly use the venv pip
+  "/app/venv/bin/python -m pip install --upgrade pip",  # Force using the venv pip
   "/app/venv/bin/python -m pip install --no-cache-dir -r backend/requirements.txt",
   "npm install"
 ]
 
 [start]
-cmd = "source /app/venv/bin/activate && python -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
+cmd = "source /app/venv/bin/activate && /app/venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
