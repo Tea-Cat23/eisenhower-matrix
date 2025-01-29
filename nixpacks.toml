@@ -1,8 +1,10 @@
 [phases.setup]
-nixPkgs = ["python311", "python311Packages.pip"]
+nixPkgs = ["nodejs_20", "python311", "python311Packages.pip"]
 
 [phases.build]
 cmds = [
+  "npm install -g npm",  # Ensure npm is installed globally
+  "npm ci",               # Install frontend dependencies
   "pip install --upgrade pip",
   "pip install -r backend/requirements.txt"
 ]
