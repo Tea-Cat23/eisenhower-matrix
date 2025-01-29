@@ -1,8 +1,8 @@
 {
     "build": {
         "builder": "NIXPACKS",
-        "buildCommand": "python3.10 -m venv /app/venv && source /app/venv/bin/activate && /app/venv/bin/python -m pip install --upgrade pip && /app/venv/bin/python -m pip install --no-cache-dir -r backend/requirements.txt && npm install"
+        "buildCommand": "python3 -m venv /app/venv && /app/venv/bin/python -m pip install --upgrade pip && /app/venv/bin/python -m pip install --no-cache-dir -r backend/requirements.txt && npm install"
     },
-    "preDeployCommand": "source /app/venv/bin/activate && /app/venv/bin/python -m pip install --no-cache-dir uvicorn fastapi -r backend/requirements.txt",
-    "start": "source /app/venv/bin/activate && /app/venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
+    "preDeployCommand": "/app/venv/bin/python -m pip install --no-cache-dir --force-reinstall uvicorn fastapi",
+    "start": "/app/venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
 }
