@@ -10,7 +10,7 @@ nixPkgs = [
 
 [phases.build]
 cmds = [
-  "npm install"  # Ensures Node dependencies are installed
+  "npm install"  # Ensures Node dependencies are installed properly
 ]
 
 [start]
