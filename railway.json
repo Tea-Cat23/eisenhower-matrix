@@ -1,7 +1,7 @@
 {
     "build": {
       "builder": "NIXPACKS",
-      "buildCommand": "pip install -r backend/requirements.txt && npm install"
+      "buildCommand": "python3 -m venv /app/venv && source /app/venv/bin/activate && pip install -r backend/requirements.txt && npm install"
     },
-    "start": "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
+    "start": "source /app/venv/bin/activate && python3 -m uvicorn backend.main:app --host 0.0.0.0 --port 8080"
   }
