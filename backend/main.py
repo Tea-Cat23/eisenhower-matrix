@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -18,13 +18,20 @@ openai.api_key = openai_api_key
 
 app = FastAPI()
 
-# Enable CORS for local development
+# Define allowed origins (Vercel and local development)
+origins = [
+    "http://localhost:3000",  # Local dev environment
+    "https://eisenhower-matrix-orpin.vercel.app",  # Your Vercel frontend
+    "https://eisenhower-matrix-production.up.railway.app",  # (Optional) Your backend domain
+]
+
+# Add CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Restrict to local frontend
+    allow_origins=origins,  # Allows requests from frontend
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],  # Allows all HTTP methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # Define Task Model
@@ -82,8 +89,10 @@ def read_root():
 
 # API Endpoint to Rank Tasks
 @app.post("/rank-tasks")
-def rank_tasks(task_list: list[Task]):
+async def rank_tasks(request: Request):
+    data = await request.json()
     try:
+        task_list = [Task(**task) for task in data]
         print("🔵 Received Tasks:", task_list)
 
         ai_result = ai_rank_tasks(task_list)
@@ -105,7 +114,7 @@ def rank_tasks(task_list: list[Task]):
                     ))
 
         print("✅ Final Updated Tasks:", updated_tasks)
-        return updated_tasks
+        return {"message": "Task ranked successfully!", "data": updated_tasks}
 
     except Exception as e:
         print("❌ Backend Error:", str(e))
