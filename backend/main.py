@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+import logging
 import openai
 import os
 import json
@@ -17,6 +18,13 @@ if not openai_api_key:
 openai.api_key = openai_api_key
 
 app = FastAPI()
+
+# Check OpenAI API accessibility
+try:
+    openai.Model.list()
+    logging.debug("✅ OpenAI API is accessible!")
+except Exception as e:
+    logging.error(f"❌ OpenAI API error: {e}")
 
 # Define allowed origins (Vercel and local development)
 origins = [
