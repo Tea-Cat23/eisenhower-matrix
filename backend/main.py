@@ -52,6 +52,8 @@ class Task(BaseModel):
 
 # Function to Rank Tasks Using OpenAI
 def ai_rank_tasks(task_list):
+    print(f"🔵 Starting AI ranking for tasks: {task_list}")
+    
     prompt = f"""
     Analyze the following list of tasks and rank them in terms of:
     - Urgency (1-10 scale)
@@ -79,16 +81,32 @@ def ai_rank_tasks(task_list):
             temperature=0.5,
         )
 
-        print("✅ OpenAI Response:", response)
-
-        response_content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
-        if not response_content:
-            raise ValueError("⚠️ OpenAI returned an empty response.")
-
+        print("✅ Raw OpenAI Response:", response)
+        
+        # Extract content from response
+        response_content = response.choices[0].message.content
+        print("📝 Response Content:", response_content)
+        
+        # Parse JSON response
         ranked_tasks = json.loads(response_content)
+        print("🎯 Parsed Tasks:", ranked_tasks)
+        
+        # Validate response format
+        if not isinstance(ranked_tasks, list):
+            raise ValueError("Response is not a list")
+            
+        for task in ranked_tasks:
+            if not all(key in task for key in ["text", "urgency", "importance", "quadrant"]):
+                raise ValueError("Task missing required fields")
+        
         return ranked_tasks
+
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON parsing error: {e}")
+        print(f"Invalid JSON content: {response_content}")
+        return None
     except Exception as e:
-        print(f"❌ Error calling OpenAI: {e}")
+        print(f"❌ Error in AI ranking: {str(e)}")
         return None
     
 @app.get("/")
@@ -99,33 +117,36 @@ def read_root():
 @app.post("/rank-tasks")
 async def rank_tasks(request: Request):
     data = await request.json()
+    print(f"📥 Received request data: {data}")
+    
     try:
         task_list = [Task(**task) for task in data]
-        print("🔵 Received Tasks:", task_list)
-
         ai_result = ai_rank_tasks(task_list)
-
+        
         if not ai_result:
-            raise HTTPException(status_code=500, detail="AI failed to rank tasks.")
-
-        # Update tasks with AI rankings
+            raise HTTPException(status_code=500, detail="AI ranking failed")
+            
         updated_tasks = []
         for task in task_list:
             for ranked_task in ai_result:
                 if task.text.lower().strip() == ranked_task["text"].lower().strip():
-                    updated_tasks.append(Task(
+                    updated_task = Task(
                         id=task.id,
                         text=task.text,
                         urgency=ranked_task["urgency"],
                         importance=ranked_task["importance"],
                         quadrant=ranked_task["quadrant"]
-                    ))
-
-        print("✅ Final Updated Tasks:", updated_tasks)
-        return {"message": "Task ranked successfully!", "data": updated_tasks}
-
+                    )
+                    updated_tasks.append(updated_task)
+                    print(f"✅ Updated task: {updated_task}")
+                    
+        if not updated_tasks:
+            raise HTTPException(status_code=500, detail="No tasks were ranked")
+            
+        return updated_tasks
+        
     except Exception as e:
-        print("❌ Backend Error:", str(e))
+        print(f"❌ Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Run Locally
